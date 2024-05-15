@@ -96,26 +96,14 @@ from django.contrib.auth import get_user_model
 
 def enviar_correo_cotizacion(productos_info, usuario, usuario_email):
     asunto = 'Solicitud de cotización'
-    lista_productos = '\n'.join(productos_info)
-    mensaje = f"Hola {usuario}, gracias por contactarte con nosotros. Aquí está la información solicitada:\n{lista_productos}"
-    # params: resend.Emails.SendParams ={
-    #     "sender":"Acme <onboarding@resend.dev>",
-    #     "to": ['vimocolwork@gmail.com'],
-    #     "subject": "Solicitud de cotización",
-    #     "html": "<p>Congrats on sending your <strong>first email</strong>!</p>"
-    # }
-    # try:
-    #     resend.Emails.send(params)
-    #     print("Correo enviado correctamente.")
-    # except Exception as e:
-    #     print(f"Error al enviar correo: {e}")
-
-
+    lista_productos = '<br>'.join(productos_info)  # Usamos <br> para separar los productos en líneas
+    mensaje = f"<p>Hola {usuario}, gracias por contactarte con nosotros. Aquí está la información solicitada:</p><p>{lista_productos}</p>"
     try:
         send_mail(
             subject=asunto,
-            message=mensaje,
-            from_email=EMAIL_HOST_USER,  # Utiliza una dirección de correo válida aquí.
+            message='', 
+            html_message=mensaje, 
+            from_email=settings.EMAIL_HOST_USER, 
             recipient_list=[usuario_email],
             fail_silently=False,
         )
