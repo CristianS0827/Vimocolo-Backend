@@ -13,9 +13,16 @@ from Products.models import Product
 from django.contrib.auth.decorators import login_required
 from Accounts.models import Account
 from django.core.mail import EmailMessage
+from django.core.mail import send_mail
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
+from proyecto.settings import EMAIL_HOST_USER
+from django.conf import settings
+import resend
 
+resend.api_key = "re_Jbvj1AbC_PVJzXGA7FMfRsYaSVP1HvTnW"
 
+# Create your views here.
 def _cart_id(request):
     cart = request.session.session_key
     if not cart:
@@ -87,39 +94,59 @@ class cart(APIView):
         return Response({'cart': context}, status=status.HTTP_200_OK)
 from django.contrib.auth import get_user_model
 
-def enviar_correo_cotizacion(productos, usuario, usuario_gmail):
+def enviar_correo_cotizacion(productos_info, usuario, usuario_email):
     asunto = 'Solicitud de cotización'
-    mensaje = f'Hola {usuario} gracias por contactarte con nosotros en poco tiempo te estaremos brindando mas informacion de los siguientes productos: {productos}'
-    send_mail = EmailMessage(asunto, mensaje,to=[usuario_gmail])
-    send_mail.send()
-    
-@method_decorator(csrf_exempt, name='dispatch')
+    lista_productos = '\n'.join(productos_info)
+    mensaje = f"Hola {usuario}, gracias por contactarte con nosotros. Aquí está la información solicitada:\n{lista_productos}"
+    # params: resend.Emails.SendParams ={
+    #     "sender":"Acme <onboarding@resend.dev>",
+    #     "to": ['vimocolwork@gmail.com'],
+    #     "subject": "Solicitud de cotización",
+    #     "html": "<p>Congrats on sending your <strong>first email</strong>!</p>"
+    # }
+    # try:
+    #     resend.Emails.send(params)
+    #     print("Correo enviado correctamente.")
+    # except Exception as e:
+    #     print(f"Error al enviar correo: {e}")
+
+
+    try:
+        send_mail(
+            subject=asunto,
+            message=mensaje,
+            from_email=EMAIL_HOST_USER,  # Utiliza una dirección de correo válida aquí.
+            recipient_list=[usuario_email],
+            fail_silently=False,
+        )
+        print("Correo enviado correctamente.")
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+
 class quotation(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
     def post(self, request):
-        cart_context = get_cart_data(request)
-        cart_items = cart_context.get('cart_items', [])
-        cart = Cart.objects.get(Cart_id=_cart_id(request))
+        product_ids = request.data.get('product_ids', [])
+        user_email = request.data.get('user_email', None)  # Aceptar email del usuario en la petición
+        print(f'product_ids: {product_ids}, user_email: {user_email}')
+        if not product_ids:
+            return Response({'error': 'No se ha proporcionado ningún ID de producto.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user_email:
+            return Response({'error': 'No se ha proporcionado un correo electrónico.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        productos = []
-
-        for item in cart_items:
-            product_id = item.get('Product')
-
+        productos_info = []
+        for product_id in product_ids:
             try:
                 producto = Product.objects.get(id=product_id)
-                productos.append(producto.Product_name)
-            except producto.DoesNotExist:
-                pass
-            
-        User = get_user_model()
-        user = request.user
+                producto_info = f"{producto.Product_name} \nDescripción: {producto.Description[:150]}..."  # Limitar la descripción a 150 caracteres
+                productos_info.append(producto_info)
+            except Product.DoesNotExist:
+                continue 
 
-        
-        usuario = user.first_name
-        correo_usuario = user.email
-        enviar_correo_cotizacion(productos,usuario, correo_usuario)
-        quotation = Quotation.objects.create(user=user, cart=cart)
-        quotation.save()
+        usuario = "Cliente Interesado"  
+
+        enviar_correo_cotizacion(productos_info, usuario, user_email)
         
         return Response({'mensaje': 'Solicitud de cotización enviada correctamente.'}, status=status.HTTP_200_OK)

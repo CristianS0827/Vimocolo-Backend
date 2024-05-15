@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
     'rest_framework',
+    'corsheaders',
     'Accounts',
     'Category',
     'Products',
@@ -135,10 +136,18 @@ STATIC_URL = 'static/'
 ## permissions for all cors origins
 CORS_ALLOW_ALL_ORIGINS = True 
 
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = '73904674c19379'
-EMAIL_HOST_PASSWORD = '151de593a8ba46'
-EMAIL_PORT = '2525'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'vimocolwork@gmail.com'
+EMAIL_HOST_PASSWORD = 'hxjneltcfspljgvl'
+EMAIL_PORT = '587'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+# EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+# EMAIL_HOST_USER = '73904674c19379'
+# EMAIL_HOST_PASSWORD = '151de593a8ba46'
+# EMAIL_PORT = '2525'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
